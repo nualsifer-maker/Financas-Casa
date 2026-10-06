@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#17324d">
+<link rel="manifest" href="manifest.json">
+<title>Finanças Casa · Firebase</title>
+<style>
+:root{--bg:#f4f6f8;--card:#fff;--text:#1d2939;--muted:#667085;--primary:#17324d;--border:#e4e7ec;--green:#067647;--yellow:#b54708;--red:#b42318}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial}
+header{background:var(--primary);color:#fff;padding:16px;position:sticky;top:0;z-index:5}
+header h1{margin:0;font-size:21px}header p{margin:4px 0 0;opacity:.8;font-size:13px}
+.auth{margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}.auth span{font-size:12px;opacity:.9}
+nav{display:flex;gap:6px;background:#fff;border-bottom:1px solid var(--border);padding:8px;position:sticky;top:91px;z-index:4;overflow:auto}
+nav button{border:0;background:#f2f4f7;padding:9px 12px;border-radius:9px;white-space:nowrap;font-weight:600;color:var(--muted)}nav button.active{background:#dceaf5;color:var(--primary)}
+main{max-width:1050px;margin:auto;padding:14px 14px 70px}.view{display:none}.view.active{display:block}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.card{background:#fff;border:1px solid var(--border);border-radius:13px;padding:14px;margin-bottom:12px;box-shadow:0 1px 2px #00000008}.metric{font-size:21px;font-weight:750;margin-top:5px}.label,.small{font-size:12px;color:var(--muted)}
+h2{font-size:18px;margin:8px 0 12px}h3{font-size:15px;margin:0 0 10px}input,select,button{font:inherit}input,select{width:100%;padding:10px;border:1px solid #d0d5dd;border-radius:9px;background:#fff}label{font-size:12px;font-weight:650;display:block;margin:8px 0 5px}
+form .row{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.full{grid-column:1/-1}.btn{border:0;border-radius:9px;padding:10px 13px;font-weight:700;cursor:pointer}.primary{background:var(--primary);color:#fff}.secondary{background:#eef2f6;color:var(--text)}.danger{background:#fee4e2;color:var(--red)}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 7px;border-bottom:1px solid var(--border);text-align:right}th:first-child,td:first-child{text-align:left}th{color:var(--muted);font-size:11px}
+.progress{height:9px;background:#eef0f3;border-radius:99px;overflow:hidden}.bar{height:100%;border-radius:99px}.green{background:#12b76a}.yellow{background:#f79009}.red{background:#f04438}
+.badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:700}.badge.green{background:#dcfae6;color:#067647}.badge.yellow{background:#fef0c7;color:#b54708}.badge.red{background:#fee4e2;color:#b42318}
+.actions{display:flex;gap:8px;flex-wrap:wrap}.empty{text-align:center;color:var(--muted);padding:20px}.cloud{font-size:12px;padding:4px 8px;border-radius:999px;background:#eef2f6;color:var(--muted)}.cloud.ok{background:#dcfae6;color:#067647}.cloud.err{background:#fee4e2;color:#b42318}
+@media(max-width:720px){.grid{grid-template-columns:repeat(2,1fr)}.grid2,form .row{grid-template-columns:1fr}.wide{overflow:auto}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Finanças Casa</h1>
+  <p>V4 · orçamento mensal, anual e sincronização cloud</p>
+  <div class="auth">
+    <span id="userStatus">A iniciar...</span>
+    <span id="cloudStatus" class="cloud">Cloud: a iniciar</span>
+    <button id="loginBtn" class="btn secondary" style="display:none">Entrar com Google</button>
+    <button id="logoutBtn" class="btn secondary" style="display:none">Sair</button>
+  </div>
+</header>
+
+<nav id="nav">
+<button data-v="dash" class="active">Resumo</button><button data-v="annual">Anual</button>
+<button data-v="mov">Movimentos</button><button data-v="budget">Orçamento</button>
+<button data-v="accounts">Contas</button><button data-v="data">Dados</button>
+</nav>
+
+<main>
+<section id="dash" class="view active">
+  <div class="card grid2"><div><label>Mês</label><input id="month" type="month"></div><div><label>Ano</label><input id="yearA" type="number"></div></div>
+  <div id="mk" class="grid"></div>
+  <div class="card"><h2>Orçamento mensal</h2><div id="mb"></div></div>
+  <div class="card"><h2>Receitas e custos por conta</h2><div class="wide" id="mac"></div></div>
+</section>
+
+<section id="annual" class="view">
+  <div class="card grid2"><div><label>Ano</label><input id="year" type="number"></div><div><label>Objetivo de poupança anual (€)</label><input id="goal" type="number" min="0" step=".01"></div></div>
+  <div id="ak" class="grid"></div>
+  <div class="card"><h2>Orçamento anual por categoria</h2><div class="wide" id="ab"></div></div>
+  <div class="card"><h2>Evolução mensal</h2><div class="wide" id="am"></div></div>
+</section>
+
+<section id="mov" class="view">
+  <div class="card"><h2>Registar movimento</h2>
+    <form id="form"><div class="row">
+      <div><label>Data</label><input id="date" type="date" required></div>
+      <div><label>Tipo</label><select id="type"><option>Débito</option><option>Crédito</option></select></div>
+      <div><label>Categoria</label><select id="cat"></select></div>
+      <div><label>Valor (€)</label><input id="amount" type="number" min=".01" step=".01" required></div>
+      <div><label>Conta</label><select id="account"></select></div>
+      <div><label>Quem registou</label><select id="person"><option>Nuno</option><option>Claudia</option></select></div>
+      <div class="full"><label>Descrição</label><input id="desc"></div>
+      <div class="full actions"><button class="btn primary">Adicionar movimento</button></div>
+    </div></form>
+  </div>
+  <div class="card grid2"><div><label>Filtrar mês</label><input id="filter" type="month"></div><div><label>Pesquisar</label><input id="search"></div></div>
+  <div class="card"><h2>Movimentos</h2><div class="wide" id="list"></div></div>
+</section>
+
+<section id="budget" class="view"><div class="card"><h2>Orçamento mensal por categoria</h2><p class="small">O orçamento é sincronizado com a cloud quando estás autenticado.</p><div class="wide" id="be"></div></div></section>
+<section id="accounts" class="view"><div class="card"><h2>Contas</h2><div id="cards" class="grid2"></div></div></section>
+
+<section id="data" class="view">
+  <div class="card"><h2>Backup e sincronização</h2>
+    <p class="small">O Firebase é a fonte partilhada entre PC e telemóvel. O localStorage continua como cópia local/offline.</p>
+    <div class="actions">
+      <button class="btn primary" id="jsonOut">Backup JSON</button>
+      <button class="btn secondary" id="csvOut">Exportar CSV</button>
+      <label class="btn secondary">Importar JSON<input id="jsonIn" type="file" accept=".json" style="display:none"></label>
+    </div>
+  </div>
+  <div class="card" id="status"></div>
+</section>
+</main>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBBET0rpuKIC0fLky13ZtNvH9DsRKT_5c",
+  authDomain: "financascasa-63383.firebaseapp.com",
+  projectId: "financascasa-63383",
+  storageBucket: "financascasa-63383.firebasestorage.app",
+  messagingSenderId: "632807993072",
+  appId: "1:632807993072:web:6f7704e63a59e3dffd5c35"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const provider = new GoogleAuthProvider();
+
+const ACC=["Revolut","Trade Republic","Montepio","Crédito Agrícola"];
+const CR=["Mesada Nuno","Mesada Claudia","Extra Nuno","Extra Claudia"];
+const DB=[
+"Casa Prestação","Água","Luz","TV","Aquecimento Casa","IMI","Plataformas Digitais","Centro Estudos",
+"Aulas Musica","Colegio Maria","Ballet","Futebol","Refeições Antonio","Alimentação Casa","Restaurantes",
+"Gasóleo Carro","Seguro Carro","IUC","Manutenção","Seguro Casa Caravela","Seguro Vida","Planos Banco Montepio",
+"Roupa","Calçado","Ginásio PT casal","Férias anuais","Outras despesas escolares","Barbeiro","Cabeleireiro",
+"TF","Psicologia","Dentista","Outras despesas","Saude Geral","Outras despesas Lazer"
+];
+const B={
+"Casa Prestação":191,"Água":30,"Luz":70,"TV":70,"Aquecimento Casa":120,"IMI":25,"Plataformas Digitais":20,
+"Centro Estudos":120,"Aulas Musica":150,"Colegio Maria":107,"Ballet":60,"Futebol":20,"Refeições Antonio":30,
+"Alimentação Casa":800,"Restaurantes":100,"Gasóleo Carro":220,"Seguro Carro":40,"IUC":16,"Manutenção":50,
+"Seguro Casa Caravela":35,"Seguro Vida":20,"Planos Banco Montepio":60,"Roupa":30,"Calçado":20,
+"Ginásio PT casal":140,"Férias anuais":300,"Outras despesas escolares":10,"Barbeiro":10,"Cabeleireiro":40,
+"TF":10,"Psicologia":40,"Dentista":30,"Outras despesas":0,"Saude Geral":30,"Outras despesas Lazer":20
+};
+
+const $=id=>document.getElementById(id);
+const eur=x=>new Intl.NumberFormat("pt-PT",{style:"currency",currency:"EUR"}).format(x||0);
+const mk=x=>(x||"").slice(0,7);
+const defaultData={mov:[],budget:{...B},goal:0};
+
+let d=JSON.parse(localStorage.getItem("fc_v3")||"null")||defaultData;
+if(!d.mov)d.mov=[];
+if(!d.budget)d.budget={...B};
+else for(const k of DB) if(!(k in d.budget)) d.budget[k]=B[k]||0;
+if(d.budget["Colegio Maria"]===107 && localStorage.getItem("fc_v3")) d.budget["Colegio Maria"]=107;
+
+let currentUser=null, cloudUnsub=null, cloudReady=false, syncTimer=null, applyingCloud=false;
+let dt=new Date(), ym=dt.toISOString().slice(0,7), yy=dt.getFullYear();
+$("month").value=ym;$("filter").value=ym;$("date").value=dt.toISOString().slice(0,10);
+$("year").value=yy;$("yearA").value=yy;$("goal").value=d.goal||0;
+
+function setCloudStatus(txt,cls=""){ $("cloudStatus").textContent="Cloud: "+txt; $("cloudStatus").className="cloud "+cls; }
+function saveLocal(){ localStorage.setItem("fc_v3",JSON.stringify(d)); $("status").innerHTML=`<b>${d.mov.length}</b> movimentos locais. ${currentUser?"A sincronização cloud está ativa.":"Inicia sessão para sincronizar."}`; }
+function cleanData(){
+  return {
+    mov:Array.isArray(d.mov)?d.mov:[],
+    budget:d.budget||{},
+    goal:Number(d.goal)||0,
+    version:4
+  };
+}
+function scheduleCloudSave(){
+  if(!currentUser || !cloudReady || applyingCloud)return;
+  clearTimeout(syncTimer);
+  syncTimer=setTimeout(async()=>{
+    try{
+      setCloudStatus("a guardar...");
+      await setDoc(doc(db,"users",currentUser.uid,"app","main"),cleanData(),{merge:false});
+      setCloudStatus("sincronizada","ok");
+    }catch(err){
+      console.error(err);setCloudStatus("erro ao guardar","err");
+    }
+  },350);
+}
+function save(){
+  saveLocal();
+  scheduleCloudSave();
+}
+function render(){renderM();renderY();renderList();renderBudget();renderAcc();saveLocal();}
+function calcM(m){
+  let x=d.mov.filter(a=>mk(a.date)==m);
+  let i=x.filter(a=>a.type=="Crédito").reduce((s,a)=>s+a.amount,0);
+  let e=x.filter(a=>a.type=="Débito").reduce((s,a)=>s+a.amount,0);
+  return{x,i,e,b:i-e};
+}
+function calcY(y){return d.mov.filter(a=>(a.date||"").startsWith(String(y)));}
+
+function badge(p){
+  let c=p>1?"red":p>=.8?"yellow":"green";
+  return `<span class="badge ${c}">${p>1?"Ultrapassado":p>=.8?"Atenção":"Dentro"} · ${(p*100).toFixed(1)}%</span>`;
+}
+function renderM(){
+  let m=$("month").value,c=calcM(m),bud=Object.values(d.budget).reduce((a,b)=>a+(+b||0),0),p=bud?c.e/bud:0;
+  $("mk").innerHTML=[["Receitas",c.i],["Despesas",c.e],["Saldo",c.b],["Execução",p*100,"pct"]].map(x=>`<div class="card"><div class="label">${x[0]}</div><div class="metric">${x[2]?x[1].toFixed(1)+"%":eur(x[1])}</div></div>`).join("");
+  let rows=DB.map(k=>{let b=+d.budget[k]||0,a=c.x.filter(x=>x.type=="Débito"&&x.category==k).reduce((s,x)=>s+x.amount,0);return[k,b,a,b?a/b:0]}).filter(x=>x[1]||x[2]).sort((a,b)=>b[3]-a[3]);
+  $("mb").innerHTML=rows.map(x=>`<div style="margin:10px 0"><div style="display:flex;justify-content:space-between"><b>${x[0]}</b><span>${eur(x[2])}/${eur(x[1])} ${badge(x[3])}</span></div><div class="progress"><div class="bar ${x[3]>1?"red":x[3]>=.8?"yellow":"green"}" style="width:${Math.min(x[3]*100,100)}%"></div></div></div>`).join("")||'<div class="empty">Sem dados.</div>';
+  $("mac").innerHTML=acct(c.x);
+}
+function acct(mv){
+  let r=ACC.map(a=>{let i=mv.filter(x=>x.account==a&&x.type=="Crédito").reduce((s,x)=>s+x.amount,0),e=mv.filter(x=>x.account==a&&x.type=="Débito").reduce((s,x)=>s+x.amount,0);return[a,i,e,i-e]});
+  return `<table><tr><th>Conta</th><th>Receitas</th><th>Custos</th><th>Saldo</th></tr>${r.map(x=>`<tr><td>${x[0]}</td><td>${eur(x[1])}</td><td>${eur(x[2])}</td><td>${eur(x[3])}</td></tr>`).join("")}</table>`;
+}
+function renderY(){
+  let y=+$("year").value,c=calcY(y),i=c.filter(x=>x.type=="Crédito").reduce((s,x)=>s+x.amount,0),e=c.filter(x=>x.type=="Débito").reduce((s,x)=>s+x.amount,0),ab=Object.values(d.budget).reduce((a,b)=>a+(+b||0),0)*12,p=ab?e/ab:0;
+  $("ak").innerHTML=[["Receitas",i],["Orçamento despesas",ab],["Despesas",e],["Saldo",i-e],["Margem orçamento",ab-e],["Execução anual",p*100,"pct"]].map(x=>`<div class="card"><div class="label">${x[0]}</div><div class="metric">${x[2]?x[1].toFixed(1)+"%":eur(x[1])}</div></div>`).join("");
+  let rows=DB.map(k=>{let b=(+d.budget[k]||0)*12,a=c.filter(x=>x.type=="Débito"&&x.category==k).reduce((s,x)=>s+x.amount,0);return[k,b,a,b?a/b:0]}).filter(x=>x[1]||x[2]);
+  $("ab").innerHTML=`<table><tr><th>Categoria</th><th>Orçamento</th><th>Realizado</th><th>Desvio</th><th>Execução</th></tr>${rows.map(x=>`<tr><td>${x[0]}</td><td>${eur(x[1])}</td><td>${eur(x[2])}</td><td>${eur(x[1]-x[2])}</td><td>${badge(x[3])}</td></tr>`).join("")}<tr><th>TOTAL</th><th>${eur(ab)}</th><th>${eur(e)}</th><th>${eur(ab-e)}</th><th>${badge(p)}</th></tr></table>`;
+  let ms=Array.from({length:12},(_,i)=>`${y}-${String(i+1).padStart(2,"0")}`),mo=ab/12;
+  $("am").innerHTML=`<table><tr><th>Mês</th><th>Orçamento</th><th>Realizado</th><th>Desvio</th><th>Execução</th></tr>${ms.map(m=>{let z=calcM(m),q=mo?z.e/mo:0;return`<tr><td>${new Date(m+"-01T12:00:00").toLocaleDateString("pt-PT",{month:"long"})}</td><td>${eur(mo)}</td><td>${eur(z.e)}</td><td>${eur(mo-z.e)}</td><td>${badge(q)}</td></tr>`}).join("")}</table>`;
+}
+function renderList(){
+  let m=$("filter").value,q=$("search").value.toLowerCase(),a=d.mov.filter(x=>(!m||mk(x.date)==m)&&(!q||(`${x.category} ${x.desc} ${x.account} ${x.person}`).toLowerCase().includes(q))).sort((a,b)=>b.date.localeCompare(a.date));
+  $("list").innerHTML=a.length?`<table><tr><th>Data</th><th>Tipo</th><th>Categoria</th><th>Descrição</th><th>Conta</th><th>Quem</th><th>Valor</th><th></th></tr>${a.map(x=>`<tr><td>${x.date}</td><td>${x.type}</td><td>${x.category}</td><td>${x.desc||""}</td><td>${x.account}</td><td>${x.person}</td><td>${eur(x.amount)}</td><td><button class="btn danger" onclick="del('${x.id}')">×</button></td></tr>`).join("")}</table>`:'<div class="empty">Sem movimentos.</div>';
+}
+function renderBudget(){
+  $("be").innerHTML=`<table><tr><th>Categoria</th><th>Orçamento mensal</th><th>Anual</th></tr>${DB.map(k=>`<tr><td>${k}</td><td><input type="number" step=".01" value="${d.budget[k]||0}" onchange="setB('${k}',this.value)"></td><td>${eur((d.budget[k]||0)*12)}</td></tr>`).join("")}</table>`;
+}
+function renderAcc(){
+  let y=+$("year").value,m=calcY(y);
+  $("cards").innerHTML=ACC.map(a=>{let i=m.filter(x=>x.account==a&&x.type=="Crédito").reduce((s,x)=>s+x.amount,0),e=m.filter(x=>x.account==a&&x.type=="Débito").reduce((s,x)=>s+x.amount,0);return`<div class="card"><h3>${a}</h3><div class="label">Receitas ${y}</div><div class="metric">${eur(i)}</div><div class="label">Custos ${y}</div><div class="metric">${eur(e)}</div><div class="label">Saldo</div><div class="metric">${eur(i-e)}</div></div>`}).join("");
+}
+window.setB=function(k,v){d.budget[k]=+v||0;save();render();}
+window.del=function(id){if(confirm("Eliminar movimento?")){d.mov=d.mov.filter(x=>x.id!==id);save();render();}}
+
+$("type").onchange=()=>{$("cat").innerHTML=($("type").value=="Crédito"?CR:DB).map(x=>`<option>${x}</option>`).join("")};
+$("type").onchange();
+$("account").innerHTML=ACC.map(x=>`<option>${x}</option>`).join("");
+
+$("form").onsubmit=e=>{
+  e.preventDefault();
+  d.mov.push({id:crypto.randomUUID(),date:$("date").value,type:$("type").value,category:$("cat").value,amount:+$("amount").value,account:$("account").value,person:$("person").value,desc:$("desc").value});
+  save();e.target.reset();$("date").value=dt.toISOString().slice(0,10);$("type").onchange();render();alert("Movimento registado.");
+};
+$("month").onchange=renderM;
+$("year").onchange=()=>{renderY();renderAcc()};
+$("yearA").onchange=()=>{$("year").value=$("yearA").value;renderY();renderAcc()};
+$("filter").onchange=renderList;$("search").oninput=renderList;
+$("goal").onchange=()=>{d.goal=+$("goal").value||0;save()};
+
+document.querySelectorAll("#nav button").forEach(b=>b.onclick=()=>{document.querySelectorAll("#nav button").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));$(b.dataset.v).classList.add("active")});
+
+function download(n,c,t){let a=document.createElement("a");a.href=URL.createObjectURL(new Blob([c],{type:t}));a.download=n;a.click();}
+$("jsonOut").onclick=()=>download("financas-casa-backup.json",JSON.stringify(d,null,2),"application/json");
+$("csvOut").onclick=()=>{let r=[["Data","Tipo","Categoria","Descrição","Valor","Conta","Pessoa"],...d.mov.map(x=>[x.date,x.type,x.category,x.desc,x.amount,x.account,x.person])];download("financas-casa.csv",r.map(x=>x.map(v=>`"${String(v).replaceAll('"','""')}"`).join(";")).join("\n"),"text/csv")};
+$("jsonIn").onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=async()=>{try{d=JSON.parse(r.result);save();render();if(currentUser)await setDoc(doc(db,"users",currentUser.uid,"app","main"),cleanData(),{merge:false});alert("Backup importado e sincronizado.");}catch(err){console.error(err);alert("Backup inválido ou não foi possível sincronizar.")}};r.readAsText(f)};
+
+$("loginBtn").onclick=async()=>{
+  try{await signInWithPopup(auth,provider);}
+  catch(err){console.error(err);alert("Não foi possível iniciar sessão com Google. Verifica o domínio autorizado no Firebase Authentication.");}
+};
+$("logoutBtn").onclick=()=>signOut(auth);
+
+async function connectCloud(user){
+  currentUser=user;cloudReady=false;setCloudStatus("a ligar...");
+  const ref=doc(db,"users",user.uid,"app","main");
+  if(cloudUnsub)cloudUnsub();
+  try{
+    const snap=await getDoc(ref);
+    if(snap.exists()){
+      applyingCloud=true;
+      const cloud=snap.data();
+      d={mov:Array.isArray(cloud.mov)?cloud.mov:[],budget:cloud.budget||{...B},goal:Number(cloud.goal)||0};
+      for(const k of DB) if(!(k in d.budget)) d.budget[k]=B[k]||0;
+      localStorage.setItem("fc_v3",JSON.stringify(d));
+      applyingCloud=false;
+      render();
+    }else{
+      await setDoc(ref,cleanData(),{merge:false});
+    }
+    cloudReady=true;setCloudStatus("sincronizada","ok");
+    cloudUnsub=onSnapshot(ref,snap2=>{
+      if(!snap2.exists()||applyingCloud)return;
+      const cloud=snap2.data();
+      applyingCloud=true;
+      d={mov:Array.isArray(cloud.mov)?cloud.mov:[],budget:cloud.budget||{...B},goal:Number(cloud.goal)||0};
+      for(const k of DB) if(!(k in d.budget)) d.budget[k]=B[k]||0;
+      localStorage.setItem("fc_v3",JSON.stringify(d));
+      applyingCloud=false;render();
+      setCloudStatus("sincronizada","ok");
+    },err=>{console.error(err);setCloudStatus("erro de leitura","err");});
+  }catch(err){
+    console.error(err);cloudReady=false;setCloudStatus("erro","err");
+    alert("Firebase não conseguiu carregar os dados. Verifica as regras do Firestore.");
+  }
+}
+
+onAuthStateChanged(auth,user=>{
+  if(cloudUnsub){cloudUnsub();cloudUnsub=null;}
+  cloudReady=false;currentUser=user;
+  if(user){
+    $("userStatus").textContent=`Ligado: ${user.email||user.displayName||"Google"}`;
+    $("loginBtn").style.display="none";$("logoutBtn").style.display="inline-block";
+    connectCloud(user);
+  }else{
+    $("userStatus").textContent="Não autenticado — os dados continuam locais.";
+    $("loginBtn").style.display="inline-block";$("logoutBtn").style.display="none";
+    setCloudStatus("não ligada");
+  }
+});
+
+render();
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js");
+</script>
+</body>
+</html>
