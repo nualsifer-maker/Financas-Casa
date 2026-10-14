@@ -311,6 +311,11 @@ $("logoutBtn").onclick=()=>{
 };
 window.addEventListener("focus",()=>{if(accessToken&&driveReady)pollDrive()});
 
+// Estado inicial explícito: mostrar sempre o botão de autenticação.
+$("userStatus").textContent="Não autenticado — os dados continuam locais.";
+$("loginBtn").style.display="inline-block";
+$("logoutBtn").style.display="none";
+setCloudStatus("não ligada");
 render();
 if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js");
 </script>
