@@ -248,8 +248,8 @@ function badge(p){
   return `<span class="badge ${c}">${p>1?"Ultrapassado":p>=.8?"Atenção":"Dentro"} · ${(p*100).toFixed(1)}%</span>`;
 }
 function renderM(){
-  let m=$("month").value,c=calcM(m),bud=Object.values(d.budget).reduce((a,b)=>a+(+b||0),0),p=bud?c.e/bud:0;
-  $("mk").innerHTML=[["Receitas",c.i],["Despesas",c.e],["Saldo",c.b],["Execução",p*100,"pct"]].map(x=>`<div class="card"><div class="label">${x[0]}</div><div class="metric">${x[2]?x[1].toFixed(1)+"%":eur(x[1])}</div></div>`).join("");
+  let m=$("month").value,c=calcM(m),p=c.i?c.e/c.i:0;
+ $("mk").innerHTML=[["Receitas",c.i],["Despesas",c.e],["Saldo",c.b],["Rendimento gasto",p*100,"pct"]].map(x=>`<div class="card"><div class="label">${x[0]}</div><div class="metric">${x[2]?x[1].toFixed(1)+"%":eur(x[1])}</div></div>`).join("");
   let rows=DB.map(k=>{let b=+d.budget[k]||0,a=c.x.filter(x=>x.type=="Débito"&&x.category==k).reduce((s,x)=>s+x.amount,0);return[k,b,a,b?a/b:0]}).filter(x=>x[1]||x[2]).sort((a,b)=>b[3]-a[3]);
   $("mb").innerHTML=rows.map(x=>`<div style="margin:10px 0"><div style="display:flex;justify-content:space-between"><b>${x[0]}</b><span>${eur(x[2])}/${eur(x[1])} ${badge(x[3])}</span></div><div class="progress"><div class="bar ${x[3]>1?"red":x[3]>=.8?"yellow":"green"}" style="width:${Math.min(x[3]*100,100)}%"></div></div></div>`).join("")||'<div class="empty">Sem dados.</div>';
   $("mac").innerHTML=acct(c.x);
